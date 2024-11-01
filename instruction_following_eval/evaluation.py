@@ -95,7 +95,16 @@ def test_instruction_following(example: Union[Dict[str, Any], InputExample], res
         follow_instruction_list=is_following_list,
     )
 
-def evaluate_instruction_following(examples: List[Dict[str, Any]], responses: List[str]) -> Dict[str, float]:
+def evaluate_instruction_following(
+        examples: List[Dict[str, Any]],
+        responses: List[str] = None) -> Dict[str, float]:
+    # Use 'response' field of examples if responses not explicitly provided
+    if not responses:
+        responses = [example.get('response') for example in examples]
+        if not all(r is not None for r in responses):
+            raise ValueError("Each example must have a 'response' field.")
+
+    # If using separate responses, lengths must match
     if len(examples) != len(responses):
         raise ValueError("The number of examples and responses must be the same.")
 
@@ -108,6 +117,8 @@ def evaluate_instruction_following(examples: List[Dict[str, Any]], responses: Li
         "inst_level_strict_accuracy": instruction_mean(strict_results),
         "prompt_level_loose_accuracy": mean([r.follow_all_instructions for r in loose_results]),
         "inst_level_loose_accuracy": instruction_mean(loose_results),
+        "follow_instruction_list_strict": [r.follow_instruction_list for r in strict_results],
+        "follow_instruction_list_loose": [r.follow_instruction_list for r in loose_results],
     }
 
 def print_report(results: Dict[str, float]):
